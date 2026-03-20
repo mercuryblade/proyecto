@@ -30,6 +30,10 @@ export interface Order {
   quantity: number
   price_at_order: number
   total_value: number
+  take_profit: number | null
+  stop_loss: number | null
+  tp_triggered: boolean
+  sl_triggered: boolean
   created_at: string
   executed_at: string | null
   cryptocurrency?: Cryptocurrency
@@ -50,7 +54,7 @@ export interface Transaction {
   id: string
   user_id: string
   order_id: string | null
-  transaction_type: 'buy' | 'sell' | 'deposit' | 'withdrawal'
+  transaction_type: 'buy' | 'sell' | 'deposit' | 'withdrawal' | 'tp_executed' | 'sl_executed'
   cryptocurrency_symbol: string | null
   quantity: number | null
   price: number | null

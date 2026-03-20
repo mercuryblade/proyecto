@@ -7,10 +7,10 @@ const _geist = Geist({ subsets: ['latin'] })
 const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'CryptoSim - Trading Simulator',
-  description: 'Learn cryptocurrency trading with virtual money. Practice trading BTC, ETH, and more with real-time market data.',
+  title: 'CryptoSim - Simulador de Trading',
+  description: 'Aprende trading de criptomonedas con dinero virtual. Practica operando BTC, ETH y mas con datos de mercado en tiempo real.',
   generator: 'v0.app',
-  keywords: ['crypto', 'trading', 'simulator', 'bitcoin', 'ethereum', 'practice trading'],
+  keywords: ['crypto', 'trading', 'simulador', 'bitcoin', 'ethereum', 'practica trading', 'criptomonedas'],
   icons: {
     icon: [
       {
@@ -42,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="es" className="dark">
       <body className="font-sans antialiased">
         {children}
         <Analytics />

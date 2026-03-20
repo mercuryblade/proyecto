@@ -11,14 +11,14 @@ interface MarketOverviewProps {
 export function MarketOverview({ cryptos }: MarketOverviewProps) {
   const formatCurrency = (value: number) => {
     if (value >= 1000) {
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('es-ES', {
         style: 'currency',
         currency: 'USD',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(value)
     }
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
@@ -40,12 +40,12 @@ export function MarketOverview({ cryptos }: MarketOverviewProps) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Asset</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Price</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">24h Change</th>
-                <th className="hidden px-4 py-3 text-right text-sm font-medium text-muted-foreground md:table-cell">Market Cap</th>
-                <th className="hidden px-4 py-3 text-right text-sm font-medium text-muted-foreground lg:table-cell">Volume (24h)</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Action</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Activo</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Precio</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Cambio 24h</th>
+                <th className="hidden px-4 py-3 text-right text-sm font-medium text-muted-foreground md:table-cell">Cap. de Mercado</th>
+                <th className="hidden px-4 py-3 text-right text-sm font-medium text-muted-foreground lg:table-cell">Volumen (24h)</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Accion</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -92,7 +92,7 @@ export function MarketOverview({ cryptos }: MarketOverviewProps) {
                       href={`/dashboard/trade?symbol=${crypto.symbol}`}
                       className="text-sm font-medium text-primary hover:underline"
                     >
-                      Trade
+                      Operar
                     </Link>
                   </td>
                 </tr>

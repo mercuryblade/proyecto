@@ -14,7 +14,7 @@ export default async function HistoryPage() {
     .limit(50)
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
@@ -23,7 +23,7 @@ export default async function HistoryPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('es-ES', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -35,27 +35,27 @@ export default async function HistoryPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Transaction History</h1>
-        <p className="text-muted-foreground">View your past trades and transactions</p>
+        <h1 className="text-2xl font-bold">Historial de Transacciones</h1>
+        <p className="text-muted-foreground">Revisa tus operaciones y transacciones pasadas</p>
       </div>
 
       {transactions && transactions.length > 0 ? (
         <Card className="border-border/50 bg-card/80">
           <CardHeader>
-            <CardTitle>Recent Transactions</CardTitle>
+            <CardTitle>Transacciones Recientes</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/50">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Date</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Type</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Asset</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Quantity</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Price</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Fecha</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Tipo</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Activo</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Cantidad</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Precio</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Total</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Balance After</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Saldo Despues</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -73,7 +73,7 @@ export default async function HistoryPage() {
                               : 'bg-[var(--danger)]/20 text-[var(--danger)] hover:bg-[var(--danger)]/30'
                           }
                         >
-                          {tx.transaction_type.toUpperCase()}
+                          {tx.transaction_type === 'buy' ? 'COMPRA' : 'VENTA'}
                         </Badge>
                       </td>
                       <td className="px-4 py-4 font-medium">
@@ -104,7 +104,7 @@ export default async function HistoryPage() {
       ) : (
         <Card className="border-border/50 bg-card/80">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground">No transactions yet. Start trading to see your history.</p>
+            <p className="text-muted-foreground">Aun no tienes transacciones. Comienza a operar para ver tu historial.</p>
           </CardContent>
         </Card>
       )}

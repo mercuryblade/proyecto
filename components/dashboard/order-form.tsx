@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Switch } from '@/components/ui/switch'
 import type { Cryptocurrency, Holding } from '@/lib/types'
-import { createClient } from '@/lib/supabase/client'
 
 interface OrderFormProps {
   crypto: Cryptocurrency | null
@@ -21,19 +21,24 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  
+  // TP/SL state
+  const [enableTpSl, setEnableTpSl] = useState(false)
+  const [takeProfit, setTakeProfit] = useState('')
+  const [stopLoss, setStopLoss] = useState('')
+  
   const router = useRouter()
-  const supabase = createClient()
 
   if (!crypto) {
     return (
       <div className="flex h-full items-center justify-center p-4">
-        <p className="text-muted-foreground">Select a cryptocurrency to trade</p>
+        <p className="text-muted-foreground">Selecciona una criptomoneda para operar</p>
       </div>
     )
   }
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
@@ -48,12 +53,12 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
 
   const handleBuy = async () => {
     if (!amount || numericAmount <= 0) {
-      setError('Please enter a valid amount')
+      setError('Por favor ingresa una cantidad valida')
       return
     }
 
     if (totalCost > balance) {
-      setError('Insufficient balance')
+      setError('Saldo insuficiente')
       return
     }
 
@@ -71,20 +76,24 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
           orderType: 'buy',
           quantity: numericAmount,
           price: crypto.current_price,
+          takeProfit: enableTpSl && takeProfit ? parseFloat(takeProfit) : null,
+          stopLoss: enableTpSl && stopLoss ? parseFloat(stopLoss) : null,
         }),
       })
 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to execute order')
+        throw new Error(result.error || 'Error al ejecutar la orden')
       }
 
-      setSuccess(`Successfully bought ${numericAmount} ${crypto.symbol}`)
+      setSuccess(`Compra exitosa de ${numericAmount} ${crypto.symbol}`)
       setAmount('')
+      setTakeProfit('')
+      setStopLoss('')
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : 'Ocurrio un error')
     } finally {
       setIsLoading(false)
     }
@@ -92,12 +101,12 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
 
   const handleSell = async () => {
     if (!amount || numericAmount <= 0) {
-      setError('Please enter a valid amount')
+      setError('Por favor ingresa una cantidad valida')
       return
     }
 
     if (numericAmount > holdingQuantity) {
-      setError('Insufficient holdings')
+      setError('Activos insuficientes')
       return
     }
 
@@ -121,14 +130,14 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to execute order')
+        throw new Error(result.error || 'Error al ejecutar la orden')
       }
 
-      setSuccess(`Successfully sold ${numericAmount} ${crypto.symbol}`)
+      setSuccess(`Venta exitosa de ${numericAmount} ${crypto.symbol}`)
       setAmount('')
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : 'Ocurrio un error')
     } finally {
       setIsLoading(false)
     }
@@ -144,10 +153,16 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
     }
   }
 
+  // Calculate potential profit/loss for TP/SL
+  const tpPrice = parseFloat(takeProfit) || 0
+  const slPrice = parseFloat(stopLoss) || 0
+  const potentialProfit = tpPrice > 0 ? (tpPrice - crypto.current_price) * numericAmount : 0
+  const potentialLoss = slPrice > 0 ? (crypto.current_price - slPrice) * numericAmount : 0
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border/50 p-4">
-        <h2 className="font-semibold">Place Order</h2>
+        <h2 className="font-semibold">Colocar Orden</h2>
         <div className="mt-2 flex items-center gap-2">
           {crypto.image_url && (
             <img src={crypto.image_url} alt={crypto.name} className="h-6 w-6 rounded-full" />
@@ -160,19 +175,19 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
         <Tabs defaultValue="buy" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="buy" className="data-[state=active]:bg-[var(--success)] data-[state=active]:text-[var(--background)]">
-              Buy
+              Comprar
             </TabsTrigger>
             <TabsTrigger value="sell" className="data-[state=active]:bg-[var(--danger)] data-[state=active]:text-[var(--foreground)]">
-              Sell
+              Vender
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="buy" className="mt-4 space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label htmlFor="buy-amount">Amount ({crypto.symbol})</Label>
+                <Label htmlFor="buy-amount">Cantidad ({crypto.symbol})</Label>
                 <span className="text-xs text-muted-foreground">
-                  Available: {formatCurrency(balance)}
+                  Disponible: {formatCurrency(balance)}
                 </span>
               </div>
               <Input
@@ -199,9 +214,68 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
               </div>
             </div>
 
+            {/* TP/SL Section */}
+            <div className="rounded-lg border border-border/50 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="enable-tpsl" className="text-sm">Take Profit / Stop Loss</Label>
+                <Switch
+                  id="enable-tpsl"
+                  checked={enableTpSl}
+                  onCheckedChange={setEnableTpSl}
+                />
+              </div>
+              
+              {enableTpSl && (
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label htmlFor="take-profit" className="text-xs text-[var(--success)]">
+                        Take Profit (TP)
+                      </Label>
+                      {tpPrice > 0 && (
+                        <span className="text-xs text-[var(--success)]">
+                          +{formatCurrency(potentialProfit)}
+                        </span>
+                      )}
+                    </div>
+                    <Input
+                      id="take-profit"
+                      type="number"
+                      step="0.01"
+                      placeholder={`> ${crypto.current_price.toFixed(2)}`}
+                      value={takeProfit}
+                      onChange={(e) => setTakeProfit(e.target.value)}
+                      className="bg-input/50 font-mono text-sm"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label htmlFor="stop-loss" className="text-xs text-[var(--danger)]">
+                        Stop Loss (SL)
+                      </Label>
+                      {slPrice > 0 && (
+                        <span className="text-xs text-[var(--danger)]">
+                          -{formatCurrency(potentialLoss)}
+                        </span>
+                      )}
+                    </div>
+                    <Input
+                      id="stop-loss"
+                      type="number"
+                      step="0.01"
+                      placeholder={`< ${crypto.current_price.toFixed(2)}`}
+                      value={stopLoss}
+                      onChange={(e) => setStopLoss(e.target.value)}
+                      className="bg-input/50 font-mono text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="rounded-lg bg-muted/30 p-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Price</span>
+                <span className="text-muted-foreground">Precio</span>
                 <span className="font-mono">{formatCurrency(crypto.current_price)}</span>
               </div>
               <div className="flex justify-between">
@@ -215,16 +289,16 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
               disabled={isLoading || totalCost > balance || numericAmount <= 0}
               className="w-full bg-[var(--success)] text-[var(--background)] hover:bg-[var(--success)]/90"
             >
-              {isLoading ? 'Processing...' : `Buy ${crypto.symbol}`}
+              {isLoading ? 'Procesando...' : `Comprar ${crypto.symbol}`}
             </Button>
           </TabsContent>
 
           <TabsContent value="sell" className="mt-4 space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label htmlFor="sell-amount">Amount ({crypto.symbol})</Label>
+                <Label htmlFor="sell-amount">Cantidad ({crypto.symbol})</Label>
                 <span className="text-xs text-muted-foreground">
-                  Holdings: {holdingQuantity.toFixed(6)}
+                  Activos: {holdingQuantity.toFixed(6)}
                 </span>
               </div>
               <Input
@@ -253,7 +327,7 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
 
             <div className="rounded-lg bg-muted/30 p-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Price</span>
+                <span className="text-muted-foreground">Precio</span>
                 <span className="font-mono">{formatCurrency(crypto.current_price)}</span>
               </div>
               <div className="flex justify-between">
@@ -261,7 +335,7 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
                 <span className="font-mono font-medium">{formatCurrency(totalCost)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Holdings Value</span>
+                <span className="text-muted-foreground">Valor de Activos</span>
                 <span className="font-mono">{formatCurrency(holdingValue)}</span>
               </div>
             </div>
@@ -271,7 +345,7 @@ export function OrderForm({ crypto, balance, holding, userId }: OrderFormProps) 
               disabled={isLoading || numericAmount > holdingQuantity || numericAmount <= 0}
               className="w-full bg-[var(--danger)] text-[var(--foreground)] hover:bg-[var(--danger)]/90"
             >
-              {isLoading ? 'Processing...' : `Sell ${crypto.symbol}`}
+              {isLoading ? 'Procesando...' : `Vender ${crypto.symbol}`}
             </Button>
           </TabsContent>
         </Tabs>
