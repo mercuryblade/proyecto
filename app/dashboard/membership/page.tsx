@@ -1,21 +1,27 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Check, Crown, Zap, Shield } from 'lucide-react'
+import { Check, Crown, Zap, Shield, Lock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 const plans = [
   {
-    name: 'Free',
+    name: 'Gratis',
     price: '$0',
-    period: 'forever',
-    description: 'Perfect for beginners learning to trade',
+    period: 'para siempre',
+    description: 'Perfecto para principiantes aprendiendo a operar',
     features: [
-      '$10,000 virtual balance',
-      'Access to all cryptocurrencies',
-      'Basic TradingView charts',
-      'AI Trading Assistant (limited)',
-      'Transaction history',
+      'Saldo virtual de $10,000',
+      'Acceso a todas las criptomonedas',
+      'Graficos basicos de velas',
+      'Asistente IA (limitado a 10 msgs/dia)',
+      'Historial de transacciones',
+      'Take Profit / Stop Loss basico',
+    ],
+    limitations: [
+      'Sin alertas de precio',
+      'Sin analisis de portafolio',
+      'Sin indicadores avanzados',
     ],
     tier: 'free',
     icon: Zap,
@@ -24,16 +30,18 @@ const plans = [
   {
     name: 'Premium',
     price: '$9.99',
-    period: '/month',
-    description: 'For serious traders who want more features',
+    period: '/mes',
+    description: 'Para traders serios que quieren mas funciones',
     features: [
-      '$50,000 virtual balance',
-      'Priority AI Assistant',
-      'Advanced chart indicators',
-      'Real-time price alerts',
-      'Extended transaction history',
-      'Portfolio analytics',
+      'Saldo virtual de $50,000',
+      'Asistente IA prioritario (ilimitado)',
+      'Indicadores avanzados (RSI, MACD)',
+      'Alertas de precio en tiempo real',
+      'Historial extendido de transacciones',
+      'Analisis de portafolio',
+      'Soporte por email',
     ],
+    limitations: [],
     tier: 'premium',
     icon: Crown,
     highlight: true,
@@ -41,22 +49,56 @@ const plans = [
   {
     name: 'Pro',
     price: '$29.99',
-    period: '/month',
-    description: 'Professional tools for advanced traders',
+    period: '/mes',
+    description: 'Herramientas profesionales para traders avanzados',
     features: [
-      '$100,000 virtual balance',
-      'Unlimited AI Assistant',
-      'All chart features',
-      'Custom trading strategies',
-      'API access',
-      'Priority support',
-      'Advanced risk management tools',
+      'Saldo virtual de $100,000',
+      'Asistente IA ilimitado con analisis',
+      'Todas las funciones de graficos',
+      'Estrategias de trading personalizadas',
+      'Acceso a API',
+      'Soporte prioritario 24/7',
+      'Herramientas avanzadas de gestion de riesgo',
+      'Backtesting de estrategias',
+      'IA predictiva (beta)',
     ],
+    limitations: [],
     tier: 'pro',
     icon: Shield,
     highlight: false,
   },
 ]
+
+// Funciones restringidas por nivel de membresia
+export const membershipFeatures = {
+  free: {
+    maxDailyAIMessages: 10,
+    maxBalance: 10000,
+    hasAlerts: false,
+    hasAdvancedIndicators: false,
+    hasPortfolioAnalytics: false,
+    hasBacktesting: false,
+    hasPredictiveAI: false,
+  },
+  premium: {
+    maxDailyAIMessages: Infinity,
+    maxBalance: 50000,
+    hasAlerts: true,
+    hasAdvancedIndicators: true,
+    hasPortfolioAnalytics: true,
+    hasBacktesting: false,
+    hasPredictiveAI: false,
+  },
+  pro: {
+    maxDailyAIMessages: Infinity,
+    maxBalance: 100000,
+    hasAlerts: true,
+    hasAdvancedIndicators: true,
+    hasPortfolioAnalytics: true,
+    hasBacktesting: true,
+    hasPredictiveAI: true,
+  },
+}
 
 export default async function MembershipPage() {
   const supabase = await createClient()
@@ -73,13 +115,13 @@ export default async function MembershipPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Membership</h1>
+        <h1 className="text-2xl font-bold">Membresia</h1>
         <p className="text-muted-foreground">
-          Upgrade your account for more features and higher virtual balance
+          Mejora tu cuenta para obtener mas funciones y mayor saldo virtual
         </p>
       </div>
 
-      {/* Current Plan */}
+      {/* Plan Actual */}
       <Card className="mb-8 border-border/50 bg-card/80">
         <CardContent className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
@@ -87,17 +129,19 @@ export default async function MembershipPage() {
               <Crown className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Current Plan</p>
-              <p className="font-semibold capitalize">{currentTier}</p>
+              <p className="text-sm text-muted-foreground">Plan Actual</p>
+              <p className="font-semibold capitalize">
+                {currentTier === 'free' ? 'Gratis' : currentTier === 'premium' ? 'Premium' : 'Pro'}
+              </p>
             </div>
           </div>
           <Badge variant={currentTier === 'pro' ? 'default' : 'secondary'} className="capitalize">
-            {currentTier}
+            {currentTier === 'free' ? 'Gratis' : currentTier}
           </Badge>
         </CardContent>
       </Card>
 
-      {/* Plan Cards */}
+      {/* Tarjetas de Planes */}
       <div className="grid gap-6 md:grid-cols-3">
         {plans.map((plan) => {
           const isCurrentPlan = currentTier === plan.tier
@@ -112,7 +156,7 @@ export default async function MembershipPage() {
             >
               {plan.highlight && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
+                  <Badge className="bg-primary text-primary-foreground">Mas Popular</Badge>
                 </div>
               )}
               <CardHeader className="text-center pb-2">
@@ -130,8 +174,14 @@ export default async function MembershipPage() {
                 <ul className="space-y-3">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                      <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                       <span>{feature}</span>
+                    </li>
+                  ))}
+                  {plan.limitations.map((limitation, index) => (
+                    <li key={`limit-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span>{limitation}</span>
                     </li>
                   ))}
                 </ul>
@@ -140,7 +190,11 @@ export default async function MembershipPage() {
                   variant={isCurrentPlan ? 'outline' : plan.highlight ? 'default' : 'secondary'}
                   disabled={isCurrentPlan}
                 >
-                  {isCurrentPlan ? 'Current Plan' : plan.tier === 'free' ? 'Downgrade' : 'Upgrade'}
+                  {isCurrentPlan 
+                    ? 'Plan Actual' 
+                    : plan.tier === 'free' 
+                      ? 'Cambiar a Gratis' 
+                      : 'Mejorar Plan'}
                 </Button>
               </CardContent>
             </Card>
@@ -148,13 +202,78 @@ export default async function MembershipPage() {
         })}
       </div>
 
-      {/* Note */}
+      {/* Comparacion de Funciones */}
+      <Card className="mt-8 border-border/50 bg-card/80">
+        <CardHeader>
+          <CardTitle className="text-lg">Comparacion de Funciones</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-2">Funcion</th>
+                  <th className="text-center py-3 px-2">Gratis</th>
+                  <th className="text-center py-3 px-2">Premium</th>
+                  <th className="text-center py-3 px-2">Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border/50">
+                  <td className="py-3 px-2">Saldo Virtual</td>
+                  <td className="text-center py-3 px-2">$10,000</td>
+                  <td className="text-center py-3 px-2">$50,000</td>
+                  <td className="text-center py-3 px-2">$100,000</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-3 px-2">Mensajes IA / dia</td>
+                  <td className="text-center py-3 px-2">10</td>
+                  <td className="text-center py-3 px-2">Ilimitado</td>
+                  <td className="text-center py-3 px-2">Ilimitado</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-3 px-2">Alertas de Precio</td>
+                  <td className="text-center py-3 px-2"><Lock className="h-4 w-4 mx-auto text-muted-foreground" /></td>
+                  <td className="text-center py-3 px-2"><Check className="h-4 w-4 mx-auto text-green-500" /></td>
+                  <td className="text-center py-3 px-2"><Check className="h-4 w-4 mx-auto text-green-500" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-3 px-2">Indicadores Avanzados</td>
+                  <td className="text-center py-3 px-2"><Lock className="h-4 w-4 mx-auto text-muted-foreground" /></td>
+                  <td className="text-center py-3 px-2"><Check className="h-4 w-4 mx-auto text-green-500" /></td>
+                  <td className="text-center py-3 px-2"><Check className="h-4 w-4 mx-auto text-green-500" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-3 px-2">Analisis de Portafolio</td>
+                  <td className="text-center py-3 px-2"><Lock className="h-4 w-4 mx-auto text-muted-foreground" /></td>
+                  <td className="text-center py-3 px-2"><Check className="h-4 w-4 mx-auto text-green-500" /></td>
+                  <td className="text-center py-3 px-2"><Check className="h-4 w-4 mx-auto text-green-500" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-3 px-2">Backtesting</td>
+                  <td className="text-center py-3 px-2"><Lock className="h-4 w-4 mx-auto text-muted-foreground" /></td>
+                  <td className="text-center py-3 px-2"><Lock className="h-4 w-4 mx-auto text-muted-foreground" /></td>
+                  <td className="text-center py-3 px-2"><Check className="h-4 w-4 mx-auto text-green-500" /></td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-2">IA Predictiva (Beta)</td>
+                  <td className="text-center py-3 px-2"><Lock className="h-4 w-4 mx-auto text-muted-foreground" /></td>
+                  <td className="text-center py-3 px-2"><Lock className="h-4 w-4 mx-auto text-muted-foreground" /></td>
+                  <td className="text-center py-3 px-2"><Check className="h-4 w-4 mx-auto text-green-500" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Nota */}
       <Card className="mt-8 border-border/50 bg-card/80">
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground text-center">
-            This is a demo feature. In a production app, this would integrate with a payment 
-            provider like Stripe to handle real subscriptions. All trading is done with 
-            virtual money for educational purposes.
+            Esta es una funcion de demostracion. En una aplicacion de produccion, esto se integraria con un 
+            proveedor de pagos como Stripe para manejar suscripciones reales. Todo el trading se realiza con 
+            dinero virtual para fines educativos.
           </p>
         </CardContent>
       </Card>

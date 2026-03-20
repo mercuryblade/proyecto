@@ -3,7 +3,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { Holding, Order } from '@/lib/types'
 import { Button } from '@/components/ui/button'
-import { ZoomIn, ZoomOut, RefreshCw } from 'lucide-react'
+import { ZoomIn, ZoomOut, RefreshCw, Target, ShieldAlert } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 interface PriceChartProps {
   symbol: string
@@ -13,6 +20,7 @@ interface PriceChartProps {
   takeProfit?: number | null
   stopLoss?: number | null
   onTpSlChange?: (tp: number | null, sl: number | null) => void
+  onQuickOrder?: (type: 'buy' | 'sell', price: number) => void
 }
 
 interface CandleData {
@@ -31,7 +39,8 @@ export function PriceChart({
   currentPrice,
   takeProfit,
   stopLoss,
-  onTpSlChange
+  onTpSlChange,
+  onQuickOrder
 }: PriceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<any>(null)
@@ -45,6 +54,10 @@ export function PriceChart({
   const wsRef = useRef<WebSocket | null>(null)
   const [timeframe, setTimeframe] = useState('1m')
   const [isLoading, setIsLoading] = useState(true)
+  const [showTpSlPopover, setShowTpSlPopover] = useState(false)
+  const [tempTp, setTempTp] = useState<string>(takeProfit?.toString() || '')
+  const [tempSl, setTempSl] = useState<string>(stopLoss?.toString() || '')
+  const [clickedPrice, setClickedPrice] = useState<number | null>(null)
 
   // Calculate P&L
   const pnl = holding 
@@ -140,6 +153,16 @@ export function PriceChart({
       })
 
       chartRef.current = chart
+
+      // Add click handler for placing orders on chart
+      chart.subscribeClick((param) => {
+        if (param.point && param.seriesData.size > 0) {
+          const price = candleSeriesRef.current?.coordinateToPrice(param.point.y)
+          if (price && price > 0) {
+            setClickedPrice(price)
+          }
+        }
+      })
 
       // Add candlestick series
       const candleSeries = chart.addCandlestickSeries({
@@ -354,6 +377,25 @@ export function PriceChart({
     }
   }
 
+  const handleApplyTpSl = () => {
+    const tp = tempTp ? parseFloat(tempTp) : null
+    const sl = tempSl ? parseFloat(tempSl) : null
+    onTpSlChange?.(tp, sl)
+    setShowTpSlPopover(false)
+  }
+
+  const setTpFromChart = () => {
+    if (clickedPrice) {
+      setTempTp(clickedPrice.toFixed(2))
+    }
+  }
+
+  const setSlFromChart = () => {
+    if (clickedPrice) {
+      setTempSl(clickedPrice.toFixed(2))
+    }
+  }
+
   const timeframes = [
     { label: '1m', value: '1m' },
     { label: '5m', value: '5m' },
@@ -392,12 +434,12 @@ export function PriceChart({
             <div className="flex items-center gap-6">
               <div>
                 <p className="text-xs text-muted-foreground">P&L No Realizado</p>
-                <p className={`font-mono text-lg font-bold ${pnl >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+                <p className={`font-mono text-lg font-bold ${pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                   {pnl >= 0 ? '+' : ''}{formatCurrency(pnl)}
                 </p>
               </div>
-              <div className={`rounded-lg px-3 py-1 ${pnl >= 0 ? 'bg-[var(--success)]/20' : 'bg-[var(--danger)]/20'}`}>
-                <p className={`font-mono text-lg font-bold ${pnl >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+              <div className={`rounded-lg px-3 py-1 ${pnl >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                <p className={`font-mono text-lg font-bold ${pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                   {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
                 </p>
               </div>
@@ -422,6 +464,81 @@ export function PriceChart({
           ))}
         </div>
         <div className="flex items-center gap-1">
+          {/* TP/SL Quick Setup */}
+          <Popover open={showTpSlPopover} onOpenChange={setShowTpSlPopover}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
+                <Target className="h-4 w-4" />
+                <span className="hidden sm:inline">TP/SL</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Configurar TP/SL desde Grafico</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Haz clic en el grafico para seleccionar un precio, luego usa los botones para establecerlo como TP o SL.
+                  </p>
+                </div>
+                
+                {clickedPrice && (
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Precio seleccionado:</p>
+                    <p className="font-mono font-medium text-lg">${clickedPrice.toFixed(2)}</p>
+                    <div className="flex gap-2 mt-2">
+                      <Button size="sm" variant="outline" className="flex-1 text-green-500" onClick={setTpFromChart}>
+                        <Target className="h-3 w-3 mr-1" /> Usar como TP
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1 text-red-500" onClick={setSlFromChart}>
+                        <ShieldAlert className="h-3 w-3 mr-1" /> Usar como SL
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tp" className="text-green-500 flex items-center gap-1">
+                      <Target className="h-3 w-3" /> Take Profit (USD)
+                    </Label>
+                    <Input
+                      id="tp"
+                      type="number"
+                      step="0.01"
+                      placeholder="Ej: 70000"
+                      value={tempTp}
+                      onChange={(e) => setTempTp(e.target.value)}
+                      className="border-green-500/30 focus:border-green-500"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sl" className="text-red-500 flex items-center gap-1">
+                      <ShieldAlert className="h-3 w-3" /> Stop Loss (USD)
+                    </Label>
+                    <Input
+                      id="sl"
+                      type="number"
+                      step="0.01"
+                      placeholder="Ej: 60000"
+                      value={tempSl}
+                      onChange={(e) => setTempSl(e.target.value)}
+                      className="border-red-500/30 focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowTpSlPopover(false)}>
+                    Cancelar
+                  </Button>
+                  <Button size="sm" className="flex-1" onClick={handleApplyTpSl}>
+                    Aplicar
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleZoomIn}>
             <ZoomIn className="h-4 w-4" />
           </Button>
@@ -433,6 +550,39 @@ export function PriceChart({
           </Button>
         </div>
       </div>
+
+      {/* Quick Order Buttons when price is clicked */}
+      {clickedPrice && onQuickOrder && (
+        <div className="flex items-center justify-center gap-2 border-b border-border/50 bg-card/30 px-4 py-2">
+          <span className="text-xs text-muted-foreground">
+            Precio: <span className="font-mono font-medium">${clickedPrice.toFixed(2)}</span>
+          </span>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-6 text-xs text-green-500 border-green-500/30"
+            onClick={() => onQuickOrder('buy', clickedPrice)}
+          >
+            Comprar aqui
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-6 text-xs text-red-500 border-red-500/30"
+            onClick={() => onQuickOrder('sell', clickedPrice)}
+          >
+            Vender aqui
+          </Button>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-6 text-xs"
+            onClick={() => setClickedPrice(null)}
+          >
+            Cerrar
+          </Button>
+        </div>
+      )}
 
       {/* Chart */}
       <div className="flex-1 min-h-[400px] p-2 relative">
@@ -459,23 +609,26 @@ export function PriceChart({
           </div>
           {takeProfit && takeProfit > 0 && (
             <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-[var(--success)]" />
+              <div className="h-3 w-3 rounded-full bg-green-500" />
               <span>Take Profit (TP)</span>
             </div>
           )}
           {stopLoss && stopLoss > 0 && (
             <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-[var(--danger)]" />
+              <div className="h-3 w-3 rounded-full bg-red-500" />
               <span>Stop Loss (SL)</span>
             </div>
           )}
           <div className="flex items-center gap-2">
-            <div className="h-0 w-0 border-l-[6px] border-r-[6px] border-b-[10px] border-l-transparent border-r-transparent border-b-[var(--success)]" />
+            <div className="h-0 w-0 border-l-[6px] border-r-[6px] border-b-[10px] border-l-transparent border-r-transparent border-b-green-500" />
             <span>Orden de Compra</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-0 w-0 border-l-[6px] border-r-[6px] border-t-[10px] border-l-transparent border-r-transparent border-t-[var(--danger)]" />
+            <div className="h-0 w-0 border-l-[6px] border-r-[6px] border-t-[10px] border-l-transparent border-r-transparent border-t-red-500" />
             <span>Orden de Venta</span>
+          </div>
+          <div className="ml-auto text-xs">
+            <span className="text-muted-foreground">Haz clic en el grafico para configurar TP/SL</span>
           </div>
         </div>
       </div>
