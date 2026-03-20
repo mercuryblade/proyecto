@@ -39,6 +39,27 @@ export interface Order {
   cryptocurrency?: Cryptocurrency
 }
 
+// Position represents an open LONG or SHORT position
+export interface Position {
+  id: string
+  user_id: string
+  cryptocurrency_id: string
+  position_type: 'long' | 'short'
+  status: 'open' | 'closed' | 'liquidated'
+  entry_price: number
+  quantity: number
+  margin: number // Amount of USD used as collateral
+  leverage: number
+  take_profit: number | null
+  stop_loss: number | null
+  realized_pnl: number
+  closed_at: string | null
+  close_price: number | null
+  created_at: string
+  updated_at: string
+  cryptocurrency?: Cryptocurrency
+}
+
 export interface Holding {
   id: string
   user_id: string
