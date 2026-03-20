@@ -7,15 +7,15 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
     const body = await request.json()
-    const { userId, cryptocurrencyId, orderType, quantity, price } = body
+    const { userId, cryptocurrencyId, orderType, quantity, price, takeProfit, stopLoss } = body
 
     // Verify user is the authenticated user
     if (userId !== user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
     // Get user profile
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       .single()
 
     if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
     }
 
     // Get cryptocurrency
@@ -37,36 +37,59 @@ export async function POST(request: Request) {
       .single()
 
     if (cryptoError || !crypto) {
-      return NextResponse.json({ error: 'Cryptocurrency not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Criptomoneda no encontrada' }, { status: 404 })
     }
 
     const totalValue = quantity * price
 
+    // Validate TP/SL values
+    if (orderType === 'buy') {
+      if (takeProfit && takeProfit <= price) {
+        return NextResponse.json({ error: 'Take Profit debe ser mayor al precio de entrada para compras' }, { status: 400 })
+      }
+      if (stopLoss && stopLoss >= price) {
+        return NextResponse.json({ error: 'Stop Loss debe ser menor al precio de entrada para compras' }, { status: 400 })
+      }
+    } else if (orderType === 'sell') {
+      if (takeProfit && takeProfit >= price) {
+        return NextResponse.json({ error: 'Take Profit debe ser menor al precio de entrada para ventas' }, { status: 400 })
+      }
+      if (stopLoss && stopLoss <= price) {
+        return NextResponse.json({ error: 'Stop Loss debe ser mayor al precio de entrada para ventas' }, { status: 400 })
+      }
+    }
+
     if (orderType === 'buy') {
       // Check if user has enough balance
       if (profile.balance < totalValue) {
-        return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 })
+        return NextResponse.json({ error: 'Saldo insuficiente' }, { status: 400 })
       }
 
-      // Create order
+      // Create order with TP/SL
+      const orderData: Record<string, unknown> = {
+        user_id: userId,
+        cryptocurrency_id: cryptocurrencyId,
+        order_type: 'buy',
+        order_status: 'executed',
+        quantity,
+        price_at_order: price,
+        total_value: totalValue,
+        executed_at: new Date().toISOString(),
+      }
+
+      // Add TP/SL if provided (these columns may not exist yet)
+      if (takeProfit) orderData.take_profit = takeProfit
+      if (stopLoss) orderData.stop_loss = stopLoss
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          user_id: userId,
-          cryptocurrency_id: cryptocurrencyId,
-          order_type: 'buy',
-          order_status: 'executed',
-          quantity,
-          price_at_order: price,
-          total_value: totalValue,
-          executed_at: new Date().toISOString(),
-        })
+        .insert(orderData)
         .select()
         .single()
 
       if (orderError) {
-        console.error('Order error:', orderError)
-        return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
+        console.error('Error de orden:', orderError)
+        return NextResponse.json({ error: 'Error al crear la orden' }, { status: 500 })
       }
 
       // Update user balance
@@ -77,8 +100,8 @@ export async function POST(request: Request) {
         .eq('id', userId)
 
       if (balanceError) {
-        console.error('Balance error:', balanceError)
-        return NextResponse.json({ error: 'Failed to update balance' }, { status: 500 })
+        console.error('Error de saldo:', balanceError)
+        return NextResponse.json({ error: 'Error al actualizar saldo' }, { status: 500 })
       }
 
       // Update or create holding
@@ -105,7 +128,7 @@ export async function POST(request: Request) {
           .eq('id', existingHolding.id)
 
         if (holdingError) {
-          console.error('Holding error:', holdingError)
+          console.error('Error de holding:', holdingError)
         }
       } else {
         // Create new holding
@@ -119,11 +142,15 @@ export async function POST(request: Request) {
           })
 
         if (holdingError) {
-          console.error('Holding error:', holdingError)
+          console.error('Error de holding:', holdingError)
         }
       }
 
-      // Create transaction record
+      // Create transaction record with TP/SL info
+      let notes = `Compra de ${quantity} ${crypto.symbol} a $${price.toFixed(2)}`
+      if (takeProfit) notes += ` | TP: $${takeProfit.toFixed(2)}`
+      if (stopLoss) notes += ` | SL: $${stopLoss.toFixed(2)}`
+
       await supabase.from('transactions').insert({
         user_id: userId,
         order_id: order.id,
@@ -133,10 +160,14 @@ export async function POST(request: Request) {
         price,
         total_value: totalValue,
         balance_after: newBalance,
-        notes: `Bought ${quantity} ${crypto.symbol} at $${price}`,
+        notes,
       })
 
-      return NextResponse.json({ success: true, order })
+      return NextResponse.json({ 
+        success: true, 
+        order,
+        message: `Compra ejecutada: ${quantity} ${crypto.symbol}${takeProfit ? ` con TP a $${takeProfit}` : ''}${stopLoss ? ` y SL a $${stopLoss}` : ''}`
+      })
     } else if (orderType === 'sell') {
       // Get user's holding
       const { data: holding, error: holdingError } = await supabase
@@ -147,28 +178,33 @@ export async function POST(request: Request) {
         .single()
 
       if (holdingError || !holding || Number(holding.quantity) < quantity) {
-        return NextResponse.json({ error: 'Insufficient holdings' }, { status: 400 })
+        return NextResponse.json({ error: 'Holdings insuficientes' }, { status: 400 })
       }
 
-      // Create order
+      // Create order with TP/SL
+      const orderData: Record<string, unknown> = {
+        user_id: userId,
+        cryptocurrency_id: cryptocurrencyId,
+        order_type: 'sell',
+        order_status: 'executed',
+        quantity,
+        price_at_order: price,
+        total_value: totalValue,
+        executed_at: new Date().toISOString(),
+      }
+
+      if (takeProfit) orderData.take_profit = takeProfit
+      if (stopLoss) orderData.stop_loss = stopLoss
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          user_id: userId,
-          cryptocurrency_id: cryptocurrencyId,
-          order_type: 'sell',
-          order_status: 'executed',
-          quantity,
-          price_at_order: price,
-          total_value: totalValue,
-          executed_at: new Date().toISOString(),
-        })
+        .insert(orderData)
         .select()
         .single()
 
       if (orderError) {
-        console.error('Order error:', orderError)
-        return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
+        console.error('Error de orden:', orderError)
+        return NextResponse.json({ error: 'Error al crear la orden' }, { status: 500 })
       }
 
       // Update user balance
@@ -179,8 +215,8 @@ export async function POST(request: Request) {
         .eq('id', userId)
 
       if (balanceError) {
-        console.error('Balance error:', balanceError)
-        return NextResponse.json({ error: 'Failed to update balance' }, { status: 500 })
+        console.error('Error de saldo:', balanceError)
+        return NextResponse.json({ error: 'Error al actualizar saldo' }, { status: 500 })
       }
 
       // Update holding
@@ -195,7 +231,11 @@ export async function POST(request: Request) {
           .eq('id', holding.id)
       }
 
-      // Create transaction record
+      // Create transaction record with TP/SL info
+      let notes = `Venta de ${quantity} ${crypto.symbol} a $${price.toFixed(2)}`
+      if (takeProfit) notes += ` | TP: $${takeProfit.toFixed(2)}`
+      if (stopLoss) notes += ` | SL: $${stopLoss.toFixed(2)}`
+
       await supabase.from('transactions').insert({
         user_id: userId,
         order_id: order.id,
@@ -205,15 +245,19 @@ export async function POST(request: Request) {
         price,
         total_value: totalValue,
         balance_after: newBalance,
-        notes: `Sold ${quantity} ${crypto.symbol} at $${price}`,
+        notes,
       })
 
-      return NextResponse.json({ success: true, order })
+      return NextResponse.json({ 
+        success: true, 
+        order,
+        message: `Venta ejecutada: ${quantity} ${crypto.symbol}${takeProfit ? ` con TP a $${takeProfit}` : ''}${stopLoss ? ` y SL a $${stopLoss}` : ''}`
+      })
     }
 
-    return NextResponse.json({ error: 'Invalid order type' }, { status: 400 })
+    return NextResponse.json({ error: 'Tipo de orden inválido' }, { status: 400 })
   } catch (error) {
-    console.error('Trade error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error de operación:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
