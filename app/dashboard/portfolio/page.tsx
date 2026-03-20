@@ -17,7 +17,7 @@ export default async function PortfolioPage() {
   const holdings = holdingsResult.data || []
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
@@ -25,7 +25,7 @@ export default async function PortfolioPage() {
     }).format(value)
   }
 
-  // Calculate portfolio stats
+  // Calcular estadisticas del portafolio
   const portfolioValue = holdings.reduce((total, holding) => {
     const crypto = holding.cryptocurrency
     if (crypto) {
@@ -44,16 +44,16 @@ export default async function PortfolioPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Portfolio</h1>
-        <p className="text-muted-foreground">Manage your cryptocurrency holdings</p>
+        <h1 className="text-2xl font-bold">Portafolio</h1>
+        <p className="text-muted-foreground">Gestiona tus tenencias de criptomonedas</p>
       </div>
 
-      {/* Portfolio Summary */}
+      {/* Resumen del Portafolio */}
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card className="border-border/50 bg-card/80">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Portfolio Value
+              Valor del Portafolio
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -64,7 +64,7 @@ export default async function PortfolioPage() {
         <Card className="border-border/50 bg-card/80">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Invested
+              Total Invertido
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -75,7 +75,7 @@ export default async function PortfolioPage() {
         <Card className="border-border/50 bg-card/80">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total P&L
+              Ganancia/Perdida Total
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -90,24 +90,24 @@ export default async function PortfolioPage() {
         </Card>
       </div>
 
-      {/* Holdings */}
+      {/* Tenencias */}
       {holdings.length > 0 ? (
         <Card className="border-border/50 bg-card/80">
           <CardHeader>
-            <CardTitle>Your Holdings</CardTitle>
+            <CardTitle>Tus Tenencias</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/50">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Asset</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Quantity</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Avg. Buy Price</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Current Price</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Value</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">P&L</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Action</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Activo</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Cantidad</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Precio Prom. Compra</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Precio Actual</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Valor</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">G/P</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Accion</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -160,7 +160,7 @@ export default async function PortfolioPage() {
                         <td className="px-4 py-4 text-right">
                           <Button asChild variant="outline" size="sm">
                             <Link href={`/dashboard/trade?symbol=${crypto.symbol}`}>
-                              Trade
+                              Operar
                             </Link>
                           </Button>
                         </td>
@@ -175,9 +175,9 @@ export default async function PortfolioPage() {
       ) : (
         <Card className="border-border/50 bg-card/80">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="mb-4 text-muted-foreground">You don{"'"}t have any holdings yet</p>
+            <p className="mb-4 text-muted-foreground">Aun no tienes ninguna tenencia</p>
             <Button asChild>
-              <Link href="/dashboard/trade">Start Trading</Link>
+              <Link href="/dashboard/trade">Comenzar a Operar</Link>
             </Button>
           </CardContent>
         </Card>

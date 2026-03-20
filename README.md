@@ -18,7 +18,7 @@ Un simulador de trading de criptomonedas educativo construido con Next.js 15, Su
 - **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, RLS)
 - **Graficos**: lightweight-charts (TradingView)
-- **IA**: Vercel AI Gateway / Hugging Face
+- **IA**: Vercel AI SDK 6 con AI Gateway (openai/gpt-4o-mini)
 
 ## Instalacion
 
@@ -27,7 +27,7 @@ Un simulador de trading de criptomonedas educativo construido con Next.js 15, Su
 ```bash
 git clone https://github.com/mercuryblade/proyecto.git
 cd proyecto
-git checkout django-trading-simulator
+git checkout cryptosim-nextjs-improvement
 ```
 
 ### 2. Instalar dependencias
@@ -45,12 +45,11 @@ Crea un archivo `.env.local` en la raiz del proyecto:
 NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
-
-# IA - Hugging Face (opcional, si no usas Vercel AI Gateway)
-HF_API_KEY=tu_api_key_de_hugging_face
 ```
 
 Obtén las credenciales de Supabase desde: https://supabase.com/dashboard -> Project Settings -> API
+
+**Nota sobre IA**: El asistente de IA utiliza Vercel AI Gateway con el modelo `openai/gpt-4o-mini`, que funciona automáticamente en proyectos desplegados en Vercel sin configuración adicional.
 
 ### 4. Configurar la base de datos
 

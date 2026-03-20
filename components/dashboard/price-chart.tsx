@@ -112,7 +112,7 @@ export function PriceChart({
     if (!chartContainerRef.current || priceData.length === 0) return
 
     const loadChart = async () => {
-      const { createChart, CrosshairMode } = await import('lightweight-charts')
+      const { createChart, CrosshairMode, CandlestickSeries, HistogramSeries } = await import('lightweight-charts')
       
       // Clear existing chart
       if (chartRef.current) {
@@ -164,8 +164,8 @@ export function PriceChart({
         }
       })
 
-      // Add candlestick series
-      const candleSeries = chart.addCandlestickSeries({
+      // Add candlestick series (v5 API uses addSeries with series type)
+      const candleSeries = chart.addSeries(CandlestickSeries, {
         upColor: '#22c55e',
         downColor: '#ef4444',
         borderDownColor: '#ef4444',
@@ -177,8 +177,8 @@ export function PriceChart({
       candleSeriesRef.current = candleSeries
       candleSeries.setData(priceData)
 
-      // Add volume series
-      const volumeSeries = chart.addHistogramSeries({
+      // Add volume series (v5 API uses addSeries with series type)
+      const volumeSeries = chart.addSeries(HistogramSeries, {
         color: '#26a69a',
         priceFormat: {
           type: 'volume',
