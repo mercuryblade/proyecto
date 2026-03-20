@@ -31,7 +31,7 @@ export default async function DashboardPage() {
   const totalValue = (profile?.balance || 0) + portfolioValue
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
@@ -42,8 +42,8 @@ export default async function DashboardPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, {profile?.display_name || 'Trader'}</p>
+        <h1 className="text-2xl font-bold">Panel Principal</h1>
+        <p className="text-muted-foreground">Bienvenido de vuelta, {profile?.display_name || 'Trader'}</p>
       </div>
 
       {/* Stats Cards */}
@@ -51,14 +51,14 @@ export default async function DashboardPage() {
         <Card className="border-border/50 bg-card/80">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Balance
+              Balance Total
             </CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
             <p className="text-xs text-muted-foreground">
-              Cash + Portfolio Value
+              Efectivo + Valor del Portafolio
             </p>
           </CardContent>
         </Card>
@@ -66,14 +66,14 @@ export default async function DashboardPage() {
         <Card className="border-border/50 bg-card/80">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Available Cash
+              Efectivo Disponible
             </CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(profile?.balance || 0)}</div>
             <p className="text-xs text-muted-foreground">
-              Ready to trade
+              Listo para operar
             </p>
           </CardContent>
         </Card>
@@ -81,14 +81,14 @@ export default async function DashboardPage() {
         <Card className="border-border/50 bg-card/80">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Portfolio Value
+              Valor del Portafolio
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(portfolioValue)}</div>
             <p className="text-xs text-muted-foreground">
-              {holdings.length} assets
+              {holdings.length} activos
             </p>
           </CardContent>
         </Card>
@@ -96,7 +96,7 @@ export default async function DashboardPage() {
         <Card className="border-border/50 bg-card/80">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              P&L
+              Ganancia/Perdida
             </CardTitle>
             {totalValue >= 10000 ? (
               <TrendingUp className="h-4 w-4 text-[var(--success)]" />
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
               {totalValue >= 10000 ? '+' : ''}{formatCurrency(totalValue - 10000)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Since you started
+              Desde que empezaste
             </p>
           </CardContent>
         </Card>
@@ -118,9 +118,9 @@ export default async function DashboardPage() {
       {/* Market Overview */}
       <div className="mb-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Market Overview</h2>
+          <h2 className="text-lg font-semibold">Resumen del Mercado</h2>
           <Button asChild variant="outline" size="sm">
-            <Link href="/dashboard/trade">Start Trading</Link>
+            <Link href="/dashboard/trade">Comenzar a Operar</Link>
           </Button>
         </div>
         <MarketOverview cryptos={cryptos} />
@@ -130,9 +130,9 @@ export default async function DashboardPage() {
       {holdings.length > 0 && (
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Your Holdings</h2>
+            <h2 className="text-lg font-semibold">Tus Activos</h2>
             <Button asChild variant="outline" size="sm">
-              <Link href="/dashboard/portfolio">View All</Link>
+              <Link href="/dashboard/portfolio">Ver Todo</Link>
             </Button>
           </div>
           <Card className="border-border/50 bg-card/80">
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
                         <div>
                           <div className="font-medium">{crypto.symbol}</div>
                           <div className="text-sm text-muted-foreground">
-                            {holding.quantity.toFixed(6)} units
+                            {holding.quantity.toFixed(6)} unidades
                           </div>
                         </div>
                       </div>

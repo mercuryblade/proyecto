@@ -29,7 +29,7 @@ export function DashboardHeader({ user, profile }: DashboardHeaderProps) {
   }
 
   const formatBalance = (balance: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
@@ -49,7 +49,7 @@ export function DashboardHeader({ user, profile }: DashboardHeaderProps) {
       <div className="flex items-center gap-4">
         <div className="hidden items-center gap-6 md:flex">
           <div className="text-right">
-            <div className="text-xs text-muted-foreground">Portfolio Balance</div>
+            <div className="text-xs text-muted-foreground">Saldo del Portafolio</div>
             <div className="font-mono text-sm font-medium text-primary">
               {formatBalance(profile?.balance ?? 10000)}
             </div>
@@ -76,7 +76,7 @@ export function DashboardHeader({ user, profile }: DashboardHeaderProps) {
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="md:hidden">
-              <span className="text-muted-foreground">Balance:</span>
+              <span className="text-muted-foreground">Saldo:</span>
               <span className="ml-auto font-mono text-primary">
                 {formatBalance(profile?.balance ?? 10000)}
               </span>
@@ -84,12 +84,12 @@ export function DashboardHeader({ user, profile }: DashboardHeaderProps) {
             <DropdownMenuSeparator className="md:hidden" />
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />
-              Settings
+              Configuracion
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
-              Sign out
+              Cerrar sesion
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

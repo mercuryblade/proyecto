@@ -13,12 +13,12 @@ import {
 import { cn } from '@/lib/utils'
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Trade', href: '/dashboard/trade', icon: BarChart3 },
-  { name: 'Portfolio', href: '/dashboard/portfolio', icon: Wallet },
-  { name: 'History', href: '/dashboard/history', icon: History },
-  { name: 'AI Assistant', href: '/dashboard/assistant', icon: Bot },
-  { name: 'Membership', href: '/dashboard/membership', icon: Crown },
+  { name: 'Panel Principal', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Operar', href: '/dashboard/trade', icon: BarChart3 },
+  { name: 'Portafolio', href: '/dashboard/portfolio', icon: Wallet },
+  { name: 'Historial', href: '/dashboard/history', icon: History },
+  { name: 'Asistente IA', href: '/dashboard/assistant', icon: Bot },
+  { name: 'Membresia', href: '/dashboard/membership', icon: Crown },
 ]
 
 export function DashboardSidebar() {
