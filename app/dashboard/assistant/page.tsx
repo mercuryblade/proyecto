@@ -1,12 +1,16 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useChat } from '@ai-sdk/react'
-import { DefaultChatTransport } from 'ai'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Bot, Send, User, Loader2, TrendingUp, BookOpen, Shield, Target } from 'lucide-react'
+
+interface Message {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+}
 
 const suggestedQuestions = [
   'Como compro mi primera criptomoneda?',
@@ -28,28 +32,70 @@ const quickTopics = [
 
 export default function AssistantPage() {
   const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/chat' }),
-  })
-
-  const isLoading = status === 'streaming' || status === 'submitted'
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: text,
+    }
+
+    setMessages((prev) => [...prev, userMessage])
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      })
+
+      const data = await response.json()
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.content || 'Lo siento, no pude generar una respuesta.',
+      }
+
+      setMessages((prev) => [...prev, assistantMessage])
+    } catch (error) {
+      console.error('Error sending message:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Ocurrio un error al enviar el mensaje. Por favor intenta de nuevo.',
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading) return
-    sendMessage({ text: input })
+    sendMessage(input)
     setInput('')
   }
 
   const handleSuggestedQuestion = (question: string) => {
     if (isLoading) return
-    sendMessage({ text: question })
+    sendMessage(question)
   }
 
   return (
@@ -151,16 +197,9 @@ export default function AssistantPage() {
                           : 'bg-muted'
                       }`}
                     >
-                      {message.parts.map((part, index) => {
-                        if (part.type === 'text') {
-                          return (
-                            <div key={index} className="whitespace-pre-wrap text-sm">
-                              {part.text}
-                            </div>
-                          )
-                        }
-                        return null
-                      })}
+                      <div className="whitespace-pre-wrap text-sm">
+                        {message.content}
+                      </div>
                     </div>
                     {message.role === 'user' && (
                       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary">
@@ -169,7 +208,7 @@ export default function AssistantPage() {
                     )}
                   </div>
                 ))}
-                {isLoading && messages[messages.length - 1]?.role === 'user' && (
+                {isLoading && (
                   <div className="flex gap-3">
                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
                       <Bot className="h-4 w-4 text-primary" />
